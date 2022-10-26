@@ -28,6 +28,8 @@ int measureMode;
 const float myLathe = 0.004233333;
 int posCounter = 30000;
 int oldPos;
+
+
 // Interrupt service Routines
 void ARDUINO_ISR_ATTR moveCounter() {
     posCounter += 1;
@@ -39,6 +41,7 @@ void setup() {
   Serial.println("Booting...");
   myAddress = connectWifi();
   initDisplay();
+  initialiseWebUI();
   // Set up the Encoder interrupts
   pinMode(APIN, INPUT_PULLUP);
   attachInterrupt(APIN, moveCounter, FALLING);
@@ -48,8 +51,8 @@ void setup() {
 }
 
 void loop() {
+  webloopHandler();
   
-  webServer();
   if ( posCounter != oldPos ) {
     String mode;
     if (measureMode) mode = " (Dia)";

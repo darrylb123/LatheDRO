@@ -26,11 +26,92 @@ ported for sparkfun esp32
  */
 
 #include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
 
-const char* ssid     = "thebonds";
-const char* password = "kayeanddarrylbond";
+WebServer server(80);
 
-WiFiServer server(80);
+//Set up webserver
+void initialiseWebUI(){
+  // Allocate web page memory
+  server.on("/", handleRoot);
+  server.on("/postform/", handleForm);
+  server.onNotFound(handleRoot);
+  server.begin();
+}
+
+void webloopHandler(){
+  server.handleClient();
+}
+void handleRoot() {
+  Serial.println("handleRoot()");
+  char tempstr[1024];
+
+  strcpy(tempstr, "<!DOCTYPE html><html><head>\
+                      <title>Rotary DRO</title></head><body>\
+                      <style>\
+                      table {\
+  border-collapse: collapse;\
+  width: 100%;\
+  font-size: 30px;\
+}\
+\
+table, th, td {\
+  border: 1px solid black;\
+}\
+</style>\
+<H1> Rotary DRO 2.54mm per turn</H1>\
+<UL>\
+<LI>Measure the diameter of the object to be machined\
+<LI>Enter the measured diameter into the data field\
+<LI>Move the tip of the tool to just touch the measured object\
+<LI>Press the zero button\
+</UL>\
+This will change the mode to diameter display. Position of the cross slide movement will display the new diameter<BR>\
+<B>Measured Diameter: </B> <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
+<input type=\"text\" name=\"diameter\" value=\"0\">\
+<input type=\"submit\" value=\"Submit\">\
+    </form>\n</body></html>\n");
+    server.send(200, "text/html", tempstr);
+}
+
+void handleForm() {
+  Serial.println("handleForm()");
+  server.send(200, "text/plain", "Form Handling");
+}
+
+
+// Configure wifi using ESP Smartconfig app on phone
+int mySmartConfig() {
+  // Wipe current credentials
+  WiFi.disconnect(true); // deletes the wifi credentials
+  
+  WiFi.mode(WIFI_STA);
+  delay(2000);
+  WiFi.begin();
+  WiFi.beginSmartConfig();
+
+  //Wait for SmartConfig packet from mobile
+  Serial.println("Waiting for SmartConfig.");
+  while (!WiFi.smartConfigDone()) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("SmartConfig received.");
+
+  //Wait for WiFi to connect to AP
+  Serial.println("Waiting for WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+}
 
 
 String connectWifi()
@@ -42,19 +123,18 @@ String connectWifi()
 
     // We start by connecting to a WiFi network
 
-    Serial.println();
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-
-    WiFi.begin(ssid, password);
+    WiFi.begin();
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+    // Connected to network, if not connected after 5 attempts, start SmartConfig
+    for(int i= 0;i < 5; i++) {
+      if(WiFi.status() == WL_CONNECTED) break;
+      delay(500);
+      Serial.print('.');
     }
-
+    if(WiFi.status() != WL_CONNECTED) {
+      Serial.println("Starting SmartConfig - Use ESPTouch App to set Wifi Credentials");
+      mySmartConfig();
+    }
     Serial.println("");
     Serial.println("WiFi connected.");
     Serial.println("IP address: ");
@@ -65,59 +145,3 @@ String connectWifi()
 }
 
 int value = 0;
-
-void webServer(){
- WiFiClient client = server.available();   // listen for incoming clients
-
-  if (client) {                             // if you get a client,
-    Serial.println("New Client.");           // print a message out the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
-    while (client.connected()) {            // loop while the client's connected
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        if (c == '\n') {                    // if the byte is a newline character
-
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0) {
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println();
-
-            // the content of the HTTP response follows the header:
-            client.print("Click <a href=\"/H\">here</a> to turn the LED on pin 5 on.<br>");
-            client.print("Click <a href=\"/L\">here</a> to turn the LED on pin 5 off.<br>");
-            client.print("Click <a href=\"/R\">here</a> to reset counter<br>");
-            // The HTTP response ends with another blank line:
-            client.println();
-            // break out of the while loop:
-            break;
-          } else {    // if you got a newline, then clear currentLine:
-            currentLine = "";
-          }
-        } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
-        }
-
-        // Check to see if the client request was "GET /H" or "GET /L":
-        if (currentLine.endsWith("GET /H")) {
-          digitalWrite(7, HIGH);               // GET /H turns the LED on
-          measureMode = 1;
-        }
-        if (currentLine.endsWith("GET /L")) {
-          digitalWrite(7, LOW);                // GET /L turns the LED off
-          measureMode = 0;
-        }
-        if (currentLine.endsWith("GET /R")) {
-          posCounter = 0;
-        }
-      }
-    }
-    // close the connection:
-    client.stop();
-    Serial.println("Client Disconnected.");
-  }
-}
