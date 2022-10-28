@@ -47,7 +47,7 @@ void handleRoot() {
   Serial.println("handleRoot()");
   char tempstr[1024];
 
-  strcpy(tempstr, "<!DOCTYPE html><html><head>\
+  sprintf(tempstr, "<!DOCTYPE html><html><head>\
                       <title>Rotary DRO</title></head><body>\
                       <style>\
                       table {\
@@ -69,15 +69,34 @@ table, th, td {\
 </UL>\
 This will change the mode to diameter display. Position of the cross slide movement will display the new diameter<BR>\
 <B>Measured Diameter: </B> <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
-<input type=\"text\" name=\"diameter\" value=\"0\">\
+<input type=\"text\" name=\"diameter\" value=\"%f\">\
 <input type=\"submit\" value=\"Submit\">\
-    </form>\n</body></html>\n");
+    </form>\n</body></html>\n",diameter);
     server.send(200, "text/html", tempstr);
 }
 
 void handleForm() {
   Serial.println("handleForm()");
-  server.send(200, "text/plain", "Form Handling");
+  if (server.method() != HTTP_POST) {
+    server.send(405, "text/plain", "Method Not Allowed");
+  } else 
+  // server.send(200, "text/plain", "Form Handling");
+    String message = "POST form was:\n";
+    for (uint8_t i = 0; i < server.args(); i++) {
+      String name = server.argName(i);
+      if (name == "diameter") {
+        Serial.print("Setting Diameter to: ");
+        String val = server.arg(i);
+        diameter = val.toFloat();
+        Serial.println(diameter,6);
+        String str = "Diameter set to: ";
+        str = str + diameter;
+        server.send(200, "text/plain", str);
+      } else {
+        server.send(405, "text/plain", "Unknown paramater");
+      }
+        
+   }
 }
 
 

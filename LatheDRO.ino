@@ -28,6 +28,7 @@ int measureMode;
 const float myLathe = 0.004233333;
 int posCounter = 30000;
 int oldPos;
+float diameter = 0.0;
 
 
 // Interrupt service Routines
