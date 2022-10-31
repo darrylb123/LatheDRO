@@ -20,20 +20,26 @@
 #include <Arduino.h>
 
 
-const uint8_t APIN = 3;
-const uint8_t BPIN = 2;
+const uint8_t APIN = 7;
+const uint8_t BPIN = 8;
+const uint8_t ZPIN = 6;
 
 String myAddress;
-int measureMode;
+int measureMode = 0;
 const float myLathe = 0.004233333;
 int posCounter = 30000;
 int oldPos;
 float diameter = 0.0;
+int buttonState = 1;   
+const int initCount = 32000;
+int overrun=0;
 
 
 // Interrupt service Routines
 void ARDUINO_ISR_ATTR moveCounter() {
-    posCounter += 1;
+  overrun++;
+  posCounter += 1;
+  overrun--;
 }
 
 
@@ -47,23 +53,40 @@ void setup() {
   pinMode(APIN, INPUT_PULLUP);
   attachInterrupt(APIN, moveCounter, FALLING);
   pinMode(BPIN, INPUT_PULLUP);
-  
+  pinMode(ZPIN, INPUT_PULLUP);
 
 }
 
 void loop() {
+  float currentPos;
   webloopHandler();
+  int curbuttonState = digitalRead(ZPIN);
+  if ( curbuttonState != buttonState ){
+    Serial.print("Button Pressed ");
+    Serial.println(curbuttonState);
+    buttonState = curbuttonState;
+    posCounter = initCount; // Put it half way so it never goes negative
+  }
+  if (overrun >1) {
+    putText(0,1,20,20,"Err");
+    Serial.println("Overrun"); 
+  }
+  String mode;
   
-  if ( posCounter != oldPos ) {
-    String mode;
-    if (measureMode) mode = " (Dia)";
-      else mode = " (mm)";
-    String position = String(posCounter * myLathe,3);
+  if ( posCounter != oldPos || (millis() % 1000) == 0) {
+    if (measureMode) {
+    mode = " (Dia)";
+    currentPos = diameter - ((posCounter - initCount) * myLathe) ;
+  } else {
+    mode = " (mm)";
+    currentPos = ((posCounter - initCount) * myLathe);
+  }
+    String position = String(currentPos,3);
     // Serial.println(position);
     putText(1,1,0,0,myAddress+mode);
     putText(0,1,0,10,position);
     putText(0,1,0,20,String(posCounter));
     oldPos = posCounter;
   }
-  delay(500);
+  delay(50);
 }

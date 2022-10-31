@@ -92,6 +92,7 @@ void handleForm() {
         String str = "Diameter set to: ";
         str = str + diameter;
         server.send(200, "text/plain", str);
+        measureMode = 1;
       } else {
         server.send(405, "text/plain", "Unknown paramater");
       }
