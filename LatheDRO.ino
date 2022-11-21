@@ -38,7 +38,10 @@ int overrun=0;
 // Interrupt service Routines
 void ARDUINO_ISR_ATTR moveCounter() {
   overrun++;
-  posCounter += 1;
+  if (digitalRead(BPIN))
+    posCounter += 1;
+  else
+    posCounter -= 1;
   overrun--;
 }
 
@@ -76,7 +79,7 @@ void loop() {
   if ( posCounter != oldPos || (millis() % 1000) == 0) {
     if (measureMode) {
     mode = " (Dia)";
-    currentPos = diameter - ((posCounter - initCount) * myLathe) ;
+    currentPos = diameter + ((posCounter - initCount) * myLathe) ;
   } else {
     mode = " (mm)";
     currentPos = ((posCounter - initCount) * myLathe);
@@ -84,8 +87,8 @@ void loop() {
     String position = String(currentPos,3);
     // Serial.println(position);
     putText(1,1,0,0,myAddress+mode);
-    putText(0,1,0,10,position);
-    putText(0,1,0,20,String(posCounter));
+    putText(0,2,0,10,position);
+    // putText(0,1,0,20,String(posCounter));
     oldPos = posCounter;
   }
   delay(50);
