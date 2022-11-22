@@ -79,7 +79,7 @@ void loop() {
   if ( posCounter != oldPos || (millis() % 1000) == 0) {
     if (measureMode) {
     mode = " (Dia)";
-    currentPos = diameter + ((posCounter - initCount) * myLathe) ;
+    currentPos = diameter + ((posCounter - initCount)*2 * myLathe) ; // posCount -initCount = radius, therefore *2 for diameter
   } else {
     mode = " (mm)";
     currentPos = ((posCounter - initCount) * myLathe);
