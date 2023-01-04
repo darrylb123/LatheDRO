@@ -30,6 +30,7 @@ const float myLathe = 0.004233333;
 int posCounter = 30000;
 int oldPos;
 float diameter = 0.0;
+float currentPos;
 int buttonState = 1;   
 const int initCount = 32000;
 int overrun=0;
@@ -64,7 +65,6 @@ void setup() {
 }
 
 void loop() {
-  float currentPos;
   webloopHandler();
   int curbuttonState = digitalRead(ZPIN);
   if ( curbuttonState != buttonState ){

@@ -48,7 +48,7 @@ void webloopHandler(){
 }
 void handleRoot() {
   Serial.println("handleRoot()");
-  char tempstr[1024];
+  char tempstr[2048];
 
   sprintf(tempstr, "<!DOCTYPE html><html><head>\
                       <title>Rotary DRO</title></head><body>\
@@ -62,17 +62,24 @@ void handleRoot() {
 table, th, td {\
   border: 1px solid black;\
 }\
+input[type='text'] { \
+  font-size: 48px; \
+}\
+input[type='submit'] { \
+  font-size: 48px; \
+}\
 </style>\
 <H1> Rotary DRO 2.54mm per turn</H1>\
-<UL>\
-<LI>Measure the diameter of the object to be machined\
+<OL>\
+<LI>Place the tool in the correct position and take a fine cut of the object to be machined\
+<LI>Without moving the tool, measure the diameter of the object after the cut\
 <LI>Enter the measured diameter into the data field\
-<LI>Move the tip of the tool to just touch the measured object\
 <LI>Press the zero button\
-</UL>\
+<LI>In the event that the angle of the tool needs to be changed, repeat steps 1-4\
+</OL>\
 This will change the mode to diameter display. Position of the cross slide movement will display the new diameter<BR>\
 <B>Measured Diameter: </B> <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
-<input type=\"text\" name=\"diameter\" value=\"%f\">\
+<input type=\"text\" name=\"diameter\" value=\"%f\" { font-size: 24px; } >\
 <input type=\"submit\" value=\"Submit\">\
     </form>\n</body></html>\n",diameter);
     server.send(200, "text/html", tempstr);
@@ -91,6 +98,7 @@ void handleForm() {
         Serial.print("Setting Diameter to: ");
         String val = server.arg(i);
         diameter = val.toFloat();
+        posCounter = initCount;
         Serial.println(diameter,6);
         String str = "Diameter set to: ";
         str = str + diameter;
