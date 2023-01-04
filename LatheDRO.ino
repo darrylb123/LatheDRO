@@ -38,10 +38,13 @@ int overrun=0;
 // Interrupt service Routines
 void ARDUINO_ISR_ATTR moveCounter() {
   overrun++;
-  if (digitalRead(BPIN))
-    posCounter += 1;
-  else
-    posCounter -= 1;
+  // Try to disregard noise. Interrupt is triggered on falling edge, so see if the actual value is low
+  if (!digitalRead(APIN)){
+    if (digitalRead(BPIN))
+      posCounter += 1;
+    else
+      posCounter -= 1;
+  }
   overrun--;
 }
 
